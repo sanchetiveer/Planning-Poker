@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Planning Poker - Scrum Master</title>
+</head>
+<body>
+  <h2>Planning Poker - Scrum Master</h2>
+  <input id="room" placeholder="Room name" />
+  <button id="join">Join Room</button>
+  <button id="reveal">Reveal Estimates</button>
+  <button id="reset">Reset Round</button>
+
+  <div id="status"></div>
+  <div id="results"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let room = "";
+
+    document.getElementById('join').onclick = () => {
+      room = document.getElementById('room').value.trim();
+      socket.emit('joinRoom', { room, name: "Scrum Master" });
+    };
+
+    socket.on('memberJoined', ({ name }) => {
+      document.getElementById('status').innerHTML += `<p>${name} joined</p>`;
+    });
+
+    socket.on('estimateSubmitted', ({ name }) => {
+      document.getElementById('status').innerHTML += `<p>${name} submitted estimate</p>`;
+    });
+
+    document.getElementById('reveal').onclick = () => {
+      socket.emit('revealEstimates', room);
+    };
+
+    socket.on('showEstimates', (estimates) => {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = "<h3>Estimates:</h3><ul>" +
+        Object.values(estimates).map(e => `<li>${e.name}: ${e.value}</li>`).join('') +
+        "</ul>";
+    });
+
+    document.getElementById('reset').onclick = () => {
+      socket.emit('resetRound', room);
+    };
+
+    socket.on('resetDone', () => {
+      document.getElementById('status').innerHTML = "";
+      document.getElementById('results').innerHTML = "";
+      alert("New round started!");
+    });
+  </script>
+</body>
+</html>
